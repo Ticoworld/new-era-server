@@ -69,7 +69,9 @@ const contestantSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-
+    role: {
+      type: String
+    },
     votes: [
       {
         voterName: {

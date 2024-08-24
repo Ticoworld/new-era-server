@@ -33,7 +33,8 @@ router.get('/getdata', async (req, res) => {
         isRegistrationCompleted:contestant.isRegistrationCompleted,
         profilePic:contestant.profilePic,
         coverPic:contestant.coverPic,
-        votes: contestant.votes
+        votes: contestant.votes,
+        role:contestant.role,
       });
     } catch (error) {
       // Improve error handling

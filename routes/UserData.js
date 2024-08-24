@@ -56,6 +56,7 @@ router.get('/getdata', async (req, res) => {
       phoneNumber: user.phoneNumber,
       address: user.address,
       state: user.state,
+      role:user.role,
     };
 
    

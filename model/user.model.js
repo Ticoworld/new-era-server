@@ -75,6 +75,16 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
+    resetToken: {
+      type: String,
+    },
+    resetTokenExpires: {
+      type: Date,
+    },
+
+    role: {
+      type: String,
+    },
     orders: [
       {
         orderId: {
@@ -105,8 +115,8 @@ const userSchema = new mongoose.Schema(
         },
         status: {
           type: String,
-          enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
-          default: 'Pending',
+          enum: ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"],
+          default: "Pending",
         },
         createdAt: {
           type: Date,

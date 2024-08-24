@@ -3,12 +3,10 @@ const router = express.Router();
 const User = require("../model/user.model");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const path = require('path');
-const multer = require('multer');
 const saltRounds = 10;
 const { createMailOptions, sendMailWithPromise } = require("../utils/sendVerificationEmail");
 const { generateOtp } = require('../utils/generateOtp');
-
+const crypto = require('crypto')
 const generateToken = (email, username) => {
   const payload = { email, username };
   const expiresIn = '1h'; // Token expires in 1 hour
@@ -107,5 +105,68 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ success: false, message: "User with that email does not exist." });
+    }
+
+    // Create a reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetToken = resetToken;
+    user.resetTokenExpires = Date.now() + 3600000; // 1 hour expiration
+    await user.save();
+
+    // Create reset link
+    const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
+
+    // Send the reset link via email
+    const subject = "Password Reset Request";
+    const message = `
+      <h2>Hi ${user.username}</h2>
+      <p>You requested a password reset. Click the link below to reset your password:</p>
+      <a href="${resetLink}">Reset your password</a>
+      <p>If you did not request this, please ignore this email.</p>
+    `;
+
+    const mailOptions = createMailOptions(user.email, subject, message);
+    await sendMailWithPromise(mailOptions);
+
+    res.status(200).json({ success: true, message: "Password reset link sent to your email." });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({ success: false, message: "Server error. Please try again later." });
+  }
+});
+
+// Reset Password
+router.post("/reset-password", async (req, res) => {
+  const { resetToken, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({
+      resetToken,
+      resetTokenExpires: { $gt: Date.now() } // Check if token is still valid
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid or expired reset token." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    user.password = hashedPassword;
+    user.resetToken = undefined; // Clear the reset token
+    user.resetTokenExpires = undefined; // Clear the expiration time
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Password has been reset successfully." });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ success: false, message: "Server error. Please try again later." });
+  }
+});
 
 module.exports = router;
