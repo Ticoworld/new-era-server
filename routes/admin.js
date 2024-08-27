@@ -158,32 +158,33 @@ router.get('/completedOrders', async (req, res) => {
 
 
 
-  router.patch('/admin/orders/:orderId', async (req, res) => {
+  router.patch('/orders', async (req, res) => {
+    const { orderId, userEmail, status } = req.body;
+  
     try {
-      const { orderId } = req.params;
-      const { status } = req.body;
-  
-      // Validate status value
-      if (status !== 'Completed') {
-        return res.status(400).json({ success: false, message: 'Invalid status' });
+      // Find the user by email
+      const user = await User.findOne({ email: userEmail });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
       }
   
-      // Find and update the order
-      const updatedOrder = await Order.findByIdAndUpdate(
-        orderId,
-        { status },
-        { new: true }
-      );
-  
-      if (!updatedOrder) {
-        return res.status(404).json({ success: false, message: 'Order not found' });
+      // Find the specific order in the user's orders array
+      const order = user.orders.id(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found in user\'s orders' });
       }
   
-      res.json({ success: true, message: 'Order status updated', updatedOrder });
-    } catch (error) {
-      res.status(500).json({ success: false, message: 'Server error', error });
+      // Update the order status
+      order.status = status;
+      await user.save();
+  
+      res.status(200).json({ message: 'Order status updated successfully' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Server error' });
     }
   });
+  
 
 
 module.exports = router;
