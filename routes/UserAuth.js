@@ -17,21 +17,34 @@ const generateToken = (email, username) => {
   return { token, expirationTime };
 };
 
-// User register
+
 router.post("/register", async (req, res) => {
   const { fullname, username, email, phoneNumber, state, password } = req.body;
 
   try {
-    const existingUser = await User.findOne({ email });
+    // Check if the email or phone number already exists
+    const existingUserByEmail = await User.findOne({ email });
+    const existingUserByPhone = await User.findOne({ phoneNumber });
+    const existingUserByUsername = await User.findOne({ username });
 
-    if (existingUser) {
+    if (existingUserByEmail) {
       return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
+    if (existingUserByPhone) {
+      return res.status(400).json({ success: false, message: "Phone number already registered" });
+    }
+    if (existingUserByUsername) {
+      return res.status(400).json({ success: false, message: "Phone number already registered" });
+    }
+
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    // Generate OTP
     const { otp, otpCreatedAt } = generateOtp();
 
+    // Create a new user
     const newUser = new User({
       fullname,
       username,
@@ -41,22 +54,24 @@ router.post("/register", async (req, res) => {
       password: hashedPassword,
       cartItems: [],
       history: [],
-      order: [],
+      orders: [],
       isVerified: false,
       otp,
       otpCreatedAt,
-      role:'customer',
+      role: 'customer',
     });
 
+    // Save the user
     await newUser.save();
 
+    // Send verification email
     const subject = "Verify Your Email";
     const message = `<h2>Hi ${username} </h2>,
     <p>
     Thank you for registering with us! To complete your registration, please verify your email using the OTP provided below:
     OTP: <b>${otp}</b> 
     This OTP will expire in 10 minutes. Alternatively, you can click the link below to verify your email address:
-    <a href="http://localhost:5173/verify-email?otp=${otp}">Verify your Email</a>
+    <a href="https://new-era-server-five.vercel.app/verify-email?otp=${otp}">Verify your Email</a>
    
     Thank you! 
     </p>
@@ -66,7 +81,7 @@ router.post("/register", async (req, res) => {
 
     await sendMailWithPromise(mailOptions);
 
-    res.status(201).json({ success: true, message: "User registered successfully!" });
+    res.status(201).json({ success: true, message: "User registered successfully! Please check your email to verify your account." });
   } catch (error) {
     console.log(error);
 
@@ -77,6 +92,8 @@ router.post("/register", async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
+
+
 
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -120,10 +137,8 @@ router.post("/forgot-password", async (req, res) => {
     user.resetTokenExpires = Date.now() + 3600000; // 1 hour expiration
     await user.save();
 
-    // Create reset link
-    const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetLink = `https://new-era-server-five.vercel.app/reset-password/${resetToken}`;
 
-    // Send the reset link via email
     const subject = "Password Reset Request";
     const message = `
       <h2>Hi ${user.username}</h2>
@@ -142,14 +157,13 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
-// Reset Password
 router.post("/reset-password", async (req, res) => {
   const { resetToken, newPassword } = req.body;
 
   try {
     const user = await User.findOne({
       resetToken,
-      resetTokenExpires: { $gt: Date.now() } // Check if token is still valid
+      resetTokenExpires: { $gt: Date.now() } 
     });
 
     if (!user) {
@@ -158,8 +172,8 @@ router.post("/reset-password", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
     user.password = hashedPassword;
-    user.resetToken = undefined; // Clear the reset token
-    user.resetTokenExpires = undefined; // Clear the expiration time
+    user.resetToken = undefined; 
+    user.resetTokenExpires = undefined;
     await user.save();
 
     res.status(200).json({ success: true, message: "Password has been reset successfully." });

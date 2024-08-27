@@ -56,8 +56,7 @@ router.post("/register", async (req, res) => {
     Thank you for registering with us! To complete your registration, please verify your email using the OTP provided below:
     OTP: <b>${otp}</b> 
     This OTP will expire in 10 minutes. Alternatively, you can click the link below to verify your email address:
-    <a href="http://localhost:5173/contest-verify-email?otp=${otp}">Verify your Email</a>
-   
+    <a href="https://new-era-server-five.vercel.app/contest-verify-email?otp=${otp}">Verify your Email</a>
     Thank you! 
     </p>
     `;

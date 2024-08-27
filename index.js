@@ -3,6 +3,7 @@ const app = express();
 const mongoose = require('mongoose');
 const cors = require('cors');
 const port = process.env.PORT || 3000;
+// Routes
 const userAuthRoutes = require('./routes/UserAuth')
 const contestantAuthRoutes = require('./routes/ContestantAuth')
 const verifyRoutes = require('./routes/Verification')
@@ -10,6 +11,7 @@ const verifyContestant = require('./routes/ContestantVerification')
 const userRoutes = require('./routes/UserData')
 const contestantRoutes = require('./routes/ContestantData')
 const paymentRoutes = require('./routes/payment')
+const adminRoutes = require('./routes/admin')
 app.use(express.json());
 const path = require('path');
 const dotenv = require('dotenv');
@@ -32,6 +34,7 @@ mongoose.connection.on('connected', () => {
 app.use(express.json());
 
 // Use the auth routes
+app.use('/admin', adminRoutes);
 app.use('/user-auth', userAuthRoutes);
 app.use('/contestant-auth', contestantAuthRoutes);
 app.use('/verify', verifyRoutes);

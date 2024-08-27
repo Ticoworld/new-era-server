@@ -185,7 +185,7 @@ router.post('/createOrder', async (req, res) => {
       items: products,
       totalAmount: total,
       billingAddress: billingAddress,
-      status: 'Processing',
+      status: 'Pending',
       createdAt: new Date(),
     };
 
