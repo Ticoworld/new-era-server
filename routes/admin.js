@@ -158,39 +158,32 @@ router.get('/completedOrders', async (req, res) => {
 
 
 
-router.post('/completeOrder', async (req, res) => {
-  const { orderId } = req.body;
-
-  if (!orderId) {
-    return res.status(400).json({ success: false, message: 'Order ID is required' });
-  }
-
-  try {
-    const users = await User.find({ 'orders.orderId': orderId });
-
-    let orderFound = false;
-
-    for (const user of users) {
-      const order = user.orders.id(orderId);
-
-      if (order) {
-        order.status = 'Completed';
-        await user.save();
-        orderFound = true;
-        break; 
+  router.patch('/admin/orders/:orderId', async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const { status } = req.body;
+  
+      // Validate status value
+      if (status !== 'Completed') {
+        return res.status(400).json({ success: false, message: 'Invalid status' });
       }
+  
+      // Find and update the order
+      const updatedOrder = await Order.findByIdAndUpdate(
+        orderId,
+        { status },
+        { new: true }
+      );
+  
+      if (!updatedOrder) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+  
+      res.json({ success: true, message: 'Order status updated', updatedOrder });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Server error', error });
     }
-
-    if (orderFound) {
-      res.json({ success: true, message: 'Order marked as completed' });
-    } else {
-      res.status(404).json({ success: false, message: 'Order not found' });
-    }
-  } catch (error) {
-    console.error('Error completing order:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
+  });
 
 
 module.exports = router;

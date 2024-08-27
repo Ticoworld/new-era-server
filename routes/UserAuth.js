@@ -71,7 +71,7 @@ router.post("/register", async (req, res) => {
     Thank you for registering with us! To complete your registration, please verify your email using the OTP provided below:
     OTP: <b>${otp}</b> 
     This OTP will expire in 10 minutes. Alternatively, you can click the link below to verify your email address:
-    <a href="https://new-era-server-five.vercel.app/verify-email?otp=${otp}">Verify your Email</a>
+    <a href="https://neweraprints.vercel.app/verify-email?otp=${otp}">Verify your Email</a>
    
     Thank you! 
     </p>
@@ -137,7 +137,7 @@ router.post("/forgot-password", async (req, res) => {
     user.resetTokenExpires = Date.now() + 3600000; // 1 hour expiration
     await user.save();
 
-    const resetLink = `https://new-era-server-five.vercel.app/reset-password/${resetToken}`;
+    const resetLink = `https://neweraprints.vercel.app/reset-password/${resetToken}`;
 
     const subject = "Password Reset Request";
     const message = `
