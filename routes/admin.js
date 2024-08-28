@@ -69,115 +69,158 @@ router.post("/login", async (req, res) => {
 
 
 
-router.get('/users', async (req, res) => {
+app.get('/users', async (req, res) => {
   try {
     const users = await User.find();
-    res.json({ success: true, users });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch users', error: err.message });
+  }
+})
+
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findByIdAndDelete(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    console.error('Error deleting user:', error);
+    res.status(500).json({ message: 'Failed to delete user' });
   }
 });
 
-router.delete('/users/:userId', async (req, res) => {
-    const { userId } = req.params;
-  
-    try {
-      const deletedUser = await User.findByIdAndDelete(userId);
-  
-      if (!deletedUser) {
-        return res.status(404).json({ success: false, message: 'User not found' });
-      }
-  
-      res.json({ success: true, message: 'User deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      res.status(500).json({ success: false, message: 'Internal server error' });
-    }
-  });
 
-
-router.get('/contestants', async (req, res) => {
+app.get('/contestants', async (req, res) => {
   try {
     const contestants = await Contestant.find();
-    res.json({ success: true, contestants });
-  } catch (error) {
-    console.error('Error fetching contestants:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.json({ contestants });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch contestants', error: err.message });
   }
 });
 
-router.delete('/contestants/:userId', async (req, res) => {
-    const { contestantsId } = req.params;
-  
-    try {
-      const deletedUser = await User.findByIdAndDelete(contestantsId);
-  
-      if (!deletedUser) {
-        return res.status(404).json({ success: false, message: 'User not found' });
-      }
-  
-      res.json({ success: true, message: 'User deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      res.status(500).json({ success: false, message: 'Internal server error' });
-    }
-  });
-
-
-router.get('/pendingOrders', async (req, res) => {
+router.delete('/contestants/:id', async (req, res) => {
   try {
-    const users = await User.find({ 'orders.status': 'Pending' });
+    const contestantId = req.params.id;
 
-    const pendingOrders = users.flatMap(user =>
-      user.orders.filter(order => order.status === 'Pending')
+    const contestant = await Contestant.findByIdAndDelete(contestantId);
+
+    if (!contestant) {
+      return res.status(404).json({ message: 'Contestant not found' });
+    }
+
+    res.status(200).json({ message: 'Contestant deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting contestant:', error);
+    res.status(500).json({ message: 'Failed to delete contestant' });
+  }
+});
+
+router.put('/orders/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { status: 'completed' },
+      { new: true }
     );
 
-    res.json({ success: true, pendingOrders });
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found.' });
+    }
+
+    res.json({ message: 'Order marked as completed.', order: updatedOrder });
   } catch (error) {
-    console.error('Error fetching pending orders:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    console.error('Error marking order as completed:', error);
+    res.status(500).json({ message: 'An error occurred while marking the order as completed.' });
   }
 });
 
-router.get('/completedOrders', async (req, res) => {
-    try {
-      const users = await User.find({ 'orders.status': 'Completed' });
-  
-      const completedOrders = users.flatMap(user =>
-        user.orders.filter(order => order.status === 'Completed')
-      );
-  
-      res.json({ success: true, completedOrders });
-    } catch (error) {
-      console.error('Error fetching completed orders:', error);
-      res.status(500).json({ success: false, message: 'Internal server error' });
+router.delete('/orders/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const deletedOrder = await Order.findByIdAndDelete(orderId);
+
+    if (!deletedOrder) {
+      return res.status(404).json({ message: 'Order not found.' });
     }
-  });
+
+    res.json({ message: 'Order has been deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ message: 'An error occurred while deleting the order.' });
+  }
+});
+
+app.get('/pendingOrders', async (req, res) => {
+  try {
+    const users = await User.find();
+    const pendingOrders = [];
+
+    users.forEach((user) => {
+      user.orders.forEach((order) => {
+        if (order.status === 'Pending') {
+          pendingOrders.push({ ...order, userId: user._id, username: user.username });
+        }
+      });
+    });
+
+    res.json({ pendingOrders });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch pending orders', error: err.message });
+  }
+});
+
+app.get('/completedOrders', async (req, res) => {
+  try {
+    const users = await User.find();
+    const completedOrders = [];
+
+    users.forEach((user) => {
+      user.orders.forEach((order) => {
+        if (order.status === 'Completed') {
+          completedOrders.push({ ...order, userId: user._id, username: user.username });
+        }
+      });
+    });
+
+    res.json({ completedOrders });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch completed orders', error: err.message });
+  }
+});
   
 
 
 
-  router.patch('/orders', async (req, res) => {
-    const { orderId, userEmail, status } = req.body;
+  // router.patch('/orders', async (req, res) => {
+  //   const { orderId, userEmail, status } = req.body;
   
-    try {
-      const user = await User.findOneAndUpdate(
-        { email: userEmail, 'orders.orderId': orderId },
-        { $set: { 'orders.$.status': status } },
-        { new: true }
-      );
+  //   try {
+  //     const user = await User.findOneAndUpdate(
+  //       { email: userEmail, 'orders.orderId': orderId },
+  //       { $set: { 'orders.$.status': status } },
+  //       { new: true }
+  //     );
   
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'User or Order not found' });
-      }
+  //     if (!user) {
+  //       return res.status(404).json({ success: false, message: 'User or Order not found' });
+  //     }
   
-      res.json({ success: true, message: 'Order status updated successfully' });
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      res.status(500).json({ success: false, message: 'Internal server error' });
-    }
-  });
+  //     res.json({ success: true, message: 'Order status updated successfully' });
+  //   } catch (error) {
+  //     console.error('Error updating order status:', error);
+  //     res.status(500).json({ success: false, message: 'Internal server error' });
+  //   }
+  // });
   
   
 
