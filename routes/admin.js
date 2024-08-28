@@ -162,28 +162,23 @@ router.get('/completedOrders', async (req, res) => {
     const { orderId, userEmail, status } = req.body;
   
     try {
-      // Find the user by email
-      const user = await User.findOne({ email: userEmail });
+      const user = await User.findOneAndUpdate(
+        { email: userEmail, 'orders.orderId': orderId },
+        { $set: { 'orders.$.status': status } },
+        { new: true }
+      );
+  
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(404).json({ success: false, message: 'User or Order not found' });
       }
   
-      // Find the specific order in the user's orders array
-      const order = user.orders.id(orderId);
-      if (!order) {
-        return res.status(404).json({ message: 'Order not found in user\'s orders' });
-      }
-  
-      // Update the order status
-      order.status = status;
-      await user.save();
-  
-      res.status(200).json({ message: 'Order status updated successfully' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: 'Server error' });
+      res.json({ success: true, message: 'Order status updated successfully' });
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
     }
   });
+  
   
 
 
