@@ -69,7 +69,7 @@ router.post("/login", async (req, res) => {
 
 
 
-app.get('/users', async (req, res) => {
+router.get('/users', async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -96,7 +96,7 @@ router.delete('/users/:id', async (req, res) => {
 });
 
 
-app.get('/contestants', async (req, res) => {
+router.get('/contestants', async (req, res) => {
   try {
     const contestants = await Contestant.find();
     res.json({ contestants });
@@ -160,7 +160,7 @@ router.delete('/orders/:orderId', async (req, res) => {
   }
 });
 
-app.get('/pendingOrders', async (req, res) => {
+router.get('/pendingOrders', async (req, res) => {
   try {
     const users = await User.find();
     const pendingOrders = [];
@@ -179,7 +179,7 @@ app.get('/pendingOrders', async (req, res) => {
   }
 });
 
-app.get('/completedOrders', async (req, res) => {
+router.get('/completedOrders', async (req, res) => {
   try {
     const users = await User.find();
     const completedOrders = [];
