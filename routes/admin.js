@@ -67,162 +67,113 @@ router.post("/login", async (req, res) => {
     }
 });
 
-
-
-router.get('/users', async (req, res) => {
+router.get('/users', async(req, res)=>{
   try {
     const users = await User.find();
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch users', error: err.message });
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 })
 
-router.delete('/users/:id', async (req, res) => {
-  try {
-    const userId = req.params.id;
-
-    const user = await User.findByIdAndDelete(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.status(200).json({ message: 'User deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({ message: 'Failed to delete user' });
-  }
-});
-
-
-router.get('/contestants', async (req, res) => {
+router.get('/contestants', async(req, res)=>{
   try {
     const contestants = await Contestant.find();
-    res.json({ contestants });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch contestants', error: err.message });
+    res.status(200).json(contestants);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+})
+
+router.get('/orders/pending', async(req, res)=>{
+  try {
+    const pendingOrders = await User.find({ 'orders.status': 'Pending' }, 'fullname email orders')
+      .exec();
+
+    res.status(200).json(pendingOrders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+})
+
+
+router.get('/orders/completed', async(req, res)=>{
+  try {
+    const completedOrders = await User.find({ 'orders.status': 'Completed' }, 'fullname email orders')
+      .exec();
+
+    res.status(200).json(completedOrders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+})
+
+
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await User.findByIdAndDelete(id);
+    
+    if (result) {
+      res.status(200).json({ message: 'User deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
 router.delete('/contestants/:id', async (req, res) => {
   try {
-    const contestantId = req.params.id;
+    const { id } = req.params;
+    
+    const result = await Contestant.findByIdAndDelete(id);
+    
+    if (result) {
+      res.status(200).json({ message: 'Contestant deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'Contestant not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
-    const contestant = await Contestant.findByIdAndDelete(contestantId);
 
-    if (!contestant) {
-      return res.status(404).json({ message: 'Contestant not found' });
+// Assuming you have this route defined in a file like `routes/admin.js`
+router.patch('/orders/:id/complete', async (req, res) => {
+  try {
+    const { id } = req.params; 
+    
+    const user = await User.findOne({ 'orders._id': id });
+    if (!user) {
+      return res.status(404).json({ message: 'Order not found' });
     }
 
-    res.status(200).json({ message: 'Contestant deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting contestant:', error);
-    res.status(500).json({ message: 'Failed to delete contestant' });
-  }
-});
-
-router.put('/orders/:orderId', async (req, res) => {
-  try {
-    const { orderId } = req.params;
-
-    const updatedOrder = await Order.findByIdAndUpdate(
-      orderId,
-      { status: 'completed' },
-      { new: true }
-    );
-
-    if (!updatedOrder) {
-      return res.status(404).json({ message: 'Order not found.' });
+    // Find the order within the user's orders array
+    const order = user.orders.id(id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
     }
 
-    res.json({ message: 'Order marked as completed.', order: updatedOrder });
+    // Update the order status to 'Completed'
+    order.status = 'Completed';
+    console.log(order.status);
+    // Save the updated user document
+    await user.save();
+
+    res.status(200).json(order);
   } catch (error) {
-    console.error('Error marking order as completed:', error);
-    res.status(500).json({ message: 'An error occurred while marking the order as completed.' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-router.delete('/orders/:orderId', async (req, res) => {
-  try {
-    const { orderId } = req.params;
-
-    const deletedOrder = await Order.findByIdAndDelete(orderId);
-
-    if (!deletedOrder) {
-      return res.status(404).json({ message: 'Order not found.' });
-    }
-
-    res.json({ message: 'Order has been deleted successfully.' });
-  } catch (error) {
-    console.error('Error deleting order:', error);
-    res.status(500).json({ message: 'An error occurred while deleting the order.' });
-  }
-});
-
-router.get('/pendingOrders', async (req, res) => {
-  try {
-    const users = await User.find();
-    const pendingOrders = [];
-
-    users.forEach((user) => {
-      user.orders.forEach((order) => {
-        if (order.status === 'Pending') {
-          pendingOrders.push({ ...order, userId: user._id, username: user.username });
-        }
-      });
-    });
-
-    res.json({ pendingOrders });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch pending orders', error: err.message });
-  }
-});
-
-router.get('/completedOrders', async (req, res) => {
-  try {
-    const users = await User.find();
-    const completedOrders = [];
-
-    users.forEach((user) => {
-      user.orders.forEach((order) => {
-        if (order.status === 'Completed') {
-          completedOrders.push({ ...order, userId: user._id, username: user.username });
-        }
-      });
-    });
-
-    res.json({ completedOrders });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch completed orders', error: err.message });
-  }
-});
-  
 
 
 
-  // router.patch('/orders', async (req, res) => {
-  //   const { orderId, userEmail, status } = req.body;
-  
-  //   try {
-  //     const user = await User.findOneAndUpdate(
-  //       { email: userEmail, 'orders.orderId': orderId },
-  //       { $set: { 'orders.$.status': status } },
-  //       { new: true }
-  //     );
-  
-  //     if (!user) {
-  //       return res.status(404).json({ success: false, message: 'User or Order not found' });
-  //     }
-  
-  //     res.json({ success: true, message: 'Order status updated successfully' });
-  //   } catch (error) {
-  //     console.error('Error updating order status:', error);
-  //     res.status(500).json({ success: false, message: 'Internal server error' });
-  //   }
-  // });
-  
-  
-
-
-module.exports = router;
+module.exports = router

@@ -12,6 +12,7 @@ const userRoutes = require('./routes/UserData')
 const contestantRoutes = require('./routes/ContestantData')
 const paymentRoutes = require('./routes/payment')
 const adminRoutes = require('./routes/admin')
+
 app.use(express.json());
 const path = require('path');
 const dotenv = require('dotenv');
