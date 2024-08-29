@@ -109,6 +109,17 @@ router.get('/orders/completed', async(req, res)=>{
 })
 
 
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const contestants = await Contestant.find().sort({ votes: -1 }); // Sort contestants by votes in descending order
+    res.json({ success: true, contestants });
+  } catch (error) {
+    console.error("Error fetching leaderboard:", error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+
 router.delete('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
