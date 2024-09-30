@@ -103,26 +103,36 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Configure Multer storage to save relative paths
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../public/images')); 
+
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// Define Cloudinary storage for multer
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'profile_pics', // Optional folder name on Cloudinary
+    allowed_formats: ['jpg', 'jpeg', 'png'], // Restrict to specific formats if necessary
+    transformation: [{ width: 800, height: 600, crop: 'limit' }], // Optional resizing
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
 });
 
 const upload = multer({ storage: storage });
-
 
 router.post('/complete-registration', upload.fields([{ name: 'profilePic' }, { name: 'coverPic' }]), async (req, res) => {
   try {
     const { twitter, instagram, facebook, whatsapp } = req.body;
 
-    const profilePic = req.files['profilePic'] ? `images/${path.basename(req.files['profilePic'][0].path)}` : null;
-    const coverPic = req.files['coverPic'] ? `images/${path.basename(req.files['coverPic'][0].path)}` : null;
+    const profilePic = req.files['profilePic'] ? req.files['profilePic'][0].path : null;
+    const coverPic = req.files['coverPic'] ? req.files['coverPic'][0].path : null;
 
     const token = req.headers['x-access-token'];
     if (!token) {

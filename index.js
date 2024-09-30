@@ -16,7 +16,7 @@ const adminRoutes = require('./routes/admin')
 app.use(express.json());
 const path = require('path');
 const dotenv = require('dotenv');
-app.use(cors())
+app.use(cors()) 
 dotenv.config();
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
