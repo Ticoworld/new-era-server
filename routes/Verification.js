@@ -80,9 +80,9 @@ const { createMailOptions, sendMailWithPromise } = require("../utils/sendVerific
         const message = `
             <h2>Hi ${user.username},</h2>
             <p>You requested a new OTP for email verification. Please use the following OTP:</p>
-            <p><b>OTP:</b> ${otp}</p>
+            <p><b>OTP:</b>${otp}</p>
             <p>This OTP will expire in 10 minutes. Alternatively, you can click the link below to verify your email address:</p>
-            <p><a href="http://localhost:5173/verify-email?otp=${otp}">Verify your Email</a></p>
+            <p><a href="https://new-era-server-five.vercel.app/verify-email?otp=${otp}">Verify your Email</a></p>
             <p>Thank you!</p>
         `;
 
