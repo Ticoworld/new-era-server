@@ -104,37 +104,13 @@ router.post("/login", async (req, res) => {
 });
 
 
-const cloudinary = require('cloudinary').v2;
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-
-// Define Cloudinary storage for multer
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'profile_pics', // Optional folder name on Cloudinary
-    allowed_formats: ['jpg', 'jpeg', 'png'], // Restrict to specific formats if necessary
-    transformation: [{ width: 800, height: 600, crop: 'limit' }], // Optional resizing
-  },
-});
-
-const upload = multer({ storage: storage });
-
-router.post('/complete-registration', upload.fields([{ name: 'profilePic' }, { name: 'coverPic' }]), async (req, res) => {
+router.post('/complete-registration', async (req, res) => {
   try {
-    const { twitter, instagram, facebook, whatsapp } = req.body;
+    const { twitter, instagram, facebook, whatsapp, profilePic, coverPic } = req.body;
 
-    const profilePic = req.files['profilePic'] ? req.files['profilePic'][0].path : null;
-    const coverPic = req.files['coverPic'] ? req.files['coverPic'][0].path : null;
-
-    const token = req.headers['x-access-token'];
+    // Validate token
+    const token = req.headers['x-access-token']; 
     if (!token) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
@@ -142,6 +118,7 @@ router.post('/complete-registration', upload.fields([{ name: 'profilePic' }, { n
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const email = decoded.email;
 
+    // Update contestant details in the database
     const contestant = await Contestant.findOneAndUpdate(
       { email },
       { twitter, instagram, facebook, whatsapp, profilePic, coverPic, isRegistrationCompleted: true },
@@ -154,7 +131,7 @@ router.post('/complete-registration', upload.fields([{ name: 'profilePic' }, { n
       res.json({ success: false, message: 'User not found' });
     }
   } catch (error) {
-    console.error("Error:", error); 
+    console.error("Error:", error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
