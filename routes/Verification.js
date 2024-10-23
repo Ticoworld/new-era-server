@@ -3,7 +3,7 @@ const router = express.Router();
 const User = require("../model/user.model");
 const { createMailOptions, sendMailWithPromise } = require("../utils/sendVerificationEmail");
   const {generateOtp} = require('../utils/generateOtp');
-
+  const siteUrl = process.env.SITE_URL
   router.post("/verify-email", async (req, res) => {
     const { email, otp } = req.body;
   
@@ -82,7 +82,7 @@ const { createMailOptions, sendMailWithPromise } = require("../utils/sendVerific
             <p>You requested a new OTP for email verification. Please use the following OTP:</p>
             <p><b>OTP:</b>${otp}</p>
             <p>This OTP will expire in 10 minutes. Alternatively, you can click the link below to verify your email address:</p>
-            <p><a href="https://new-era-server-five.vercel.app/verify-email?otp=${otp}">Verify your Email</a></p>
+            <p><a href="${siteUrl}/verify-email?otp=${otp}">Verify your Email</a></p>
             <p>Thank you!</p>
         `;
 

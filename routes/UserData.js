@@ -2,6 +2,8 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../model/user.model');
 const router = express.Router();
+const { createMailOptions, sendMailWithPromise } = require("../utils/sendVerificationEmail");  
+const siteUrl = process.env.SITE_URL
 
 // Endpoint to update cart items
 router.post('/updateCart', async (req, res) => {
@@ -88,50 +90,55 @@ router.get('/gethistory', async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const email = decoded.email;
 
+    // Find the user based on the email from the token
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    res.json({ success: true, history: user.history || [] });
+    // Filter user's orders for those with status "Completed"
+    const completedOrders = user.orders.filter(order => order.status === 'Completed');
+
+    res.json({ success: true, history: completedOrders || [] });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
-router.post('/update-history', async (req, res) => {
-  try {
-    const token = req.headers['x-access-token'];
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const email = decoded.email;
+// router.post('/update-history', async (req, res) => {
+//   try {
+//     const token = req.headers['x-access-token'];
+//     if (!token) {
+//       return res.status(401).json({ success: false, message: 'No token provided' });
+//     }
 
-    const { transactionReference, amount, email: payerEmail } = req.body;
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     const email = decoded.email;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
+//     const { transactionReference, amount, email: payerEmail } = req.body;
 
-    user.history.push({
-      transactionReference,
-      amount,
-      email: payerEmail,
-      date: new Date().toISOString(),
-    });
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return res.status(404).json({ success: false, message: 'User not found' });
+//     }
 
-    await user.save();
+//     user.history.push({
+//       transactionReference,
+//       amount,
+//       email: payerEmail,
+//       date: new Date().toISOString(),
+//     });
 
-    res.json({ success: true, message: 'Purchase history updated successfully' });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
+//     await user.save();
+
+//     res.json({ success: true, message: 'Purchase history updated successfully' });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({ success: false, message: 'Internal server error' });
+//   }
+// });
 
 router.post('/clearCart', async (req, res) => {
   const token = req.headers['x-access-token']; 
@@ -169,6 +176,10 @@ router.post('/createOrder', async (req, res) => {
     return res.status(401).json({ success: false, message: 'Access token missing' });
   }
 
+  if (!total) {
+    return res.status(400).json({ success: false, message: 'Total amount is missing' });
+  }
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const email = decoded.email;
@@ -185,22 +196,40 @@ router.post('/createOrder', async (req, res) => {
       items: products,
       totalAmount: total,
       billingAddress: billingAddress,
-      status: 'Pending',
+      status: 'Awaiting',
       createdAt: new Date(),
     };
 
     user.orders.push(newOrder);
 
     user.cartItems = [];
-
-    user.history.push({
-      transactionReference: orderId,
-      amount: total,
-      email: billingAddress.email,
-      date: new Date().toISOString(),
-    });
-
+    
     await user.save();
+
+    const adminEmail = process.env.MAIL_USERNAME;
+    const subject = `New Order from ${billingAddress.name}`;
+    message = `
+        A new order has been placed by ${billingAddress.name}.
+
+        Billing Details:
+        Name: ${billingAddress.name}
+        Email: ${billingAddress.email}
+        Phone: ${billingAddress.phone}
+        Address: ${billingAddress.address}, ${billingAddress.city}, ${billingAddress.state}, ${billingAddress.zip}
+
+        Products Ordered:
+        ${products.map(product => `${product.quantity} x ${product.name} - ₦${product.price}`).join("\n")}
+
+        Total: ₦${total.toFixed(2)}
+
+        This order is currently marked as "awaiting."
+        Visit the Admin Dashboard and confirm the Order
+        <p><a href="${siteUrl}/admin">Visit Dashboard</p>
+      `;
+
+      const mailOptions = createMailOptions(adminEmail, subject, message);
+
+      await sendMailWithPromise(mailOptions);
 
     res.json({ success: true, message: 'Order created successfully', order: newOrder });
   } catch (error) {

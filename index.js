@@ -12,6 +12,8 @@ const userRoutes = require('./routes/UserData')
 const contestantRoutes = require('./routes/ContestantData')
 const paymentRoutes = require('./routes/payment')
 const adminRoutes = require('./routes/admin')
+const productRoute = require('./routes/Product')
+const AdminSettings = require('./routes/AdminSettings')
 
 app.use(express.json());
 const path = require('path');
@@ -43,3 +45,5 @@ app.use('/contest-verify', verifyContestant);
 app.use('/contestant', contestantRoutes);
 app.use('/user', userRoutes);
 app.use('/payment', paymentRoutes)
+app.use('/product', productRoute)
+app.use('/setting', AdminSettings)

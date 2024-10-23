@@ -115,8 +115,8 @@ const userSchema = new mongoose.Schema(
         },
         status: {
           type: String,
-          enum: ["Pending", "Completed",],
-          default: "Pending",
+          enum: ["Awaiting","Pending", "Completed",],
+          default: "Awaiting",
         },
         createdAt: {
           type: Date,
