@@ -92,12 +92,19 @@ router.post("/login", async (req, res) => {
     }
 
     const { token, expirationTime } = generateToken(contestant.email, contestant.username);
-
+    if (!contestant.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is not verified. Please verify your account before logging in.",
+      });
+    } else {
     res.json({
       success: true,
       token,
       expirationTime,
+      role: contestant.role,
     });
+  }
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ success: false, message: "Server error" });

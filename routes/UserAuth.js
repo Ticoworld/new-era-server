@@ -100,28 +100,39 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ success: false, message: "Invalid credentials" });
     }
+
+    // Check if password matches
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ success: false, message: "Invalid credentials" });
     }
 
+    // Generate token
     const { token, expirationTime } = generateToken(user.email, user.username);
-
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is not verified. Please verify your account before logging in.",
+      });
+    } else {
     res.json({
       success: true,
       token,
       expirationTime,
       role: user.role,
     });
+  }
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
