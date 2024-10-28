@@ -90,7 +90,7 @@ const userSchema = new mongoose.Schema(
         orderId: {
           type: String,
           required: true,
-          unique: true,
+          // unique: true,
         },
         items: [
           {
