@@ -17,7 +17,7 @@ router.get('/getproducts', async (req, res) => {
 // Add a new product
 router.post('/addproduct', async (req, res) => {
     const token = req.headers["x-access-token"];
-  const { name, price, image } = req.body;
+  const { name, image } = req.body;
   if(!token) {
     return res.status(401).json({success: false, message: 'Access token missing'});
 }
@@ -30,7 +30,6 @@ router.post('/addproduct', async (req, res) => {
       }
     const newProduct = new Product({
       name,
-      price,
       image,
     });
     await newProduct.save();
@@ -44,7 +43,7 @@ router.post('/addproduct', async (req, res) => {
 router.put('/updateproduct/:id', async (req, res) => {
     const token = req.headers["x-access-token"];
 
-  const { name, price, imageURL, category, description } = req.body;
+  const { name, image } = req.body;
   if(!token) {
     return res.status(401).json({success: false, message: 'Access token missing'});
 }
@@ -57,7 +56,7 @@ router.put('/updateproduct/:id', async (req, res) => {
       }
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
-      { name, price, imageURL, category, description },
+      { name, image },
       { new: true }
     );
     res.json({success: true, updatedProduct});
